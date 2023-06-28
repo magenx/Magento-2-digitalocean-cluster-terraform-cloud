@@ -198,6 +198,23 @@ EOF
     destination = "/tmp/cloud-init-config-${each.key}.yaml"
   }
 }
+////////////////////////////////////////////////[ DIGITALOCEAN MANAGED DATABASES ]////////////////////////////////////////
+
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create managed database services [ mysql | redis ]
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_database_cluster" "this" {
+  for_each   = var.database
+  name       = "${digitalocean_project.this.name}-${each.key}"
+  engine     = each.key
+  version    = each.value.version
+  size       = each.value.size
+  region     = var.region
+  node_count = each.value.node_count
+  private_network_uuid = digitalocean_vpc.this.id
+  eviction_policy      = each.key == "redis" ? "allkeys_lru" : null
+  tags                 = [${digitalocean_project.this.name}-${each.key}]
+}
 ////////////////////////////////////////////////[ DIGITALOCEAN PROJECT RESOURCES ]////////////////////////////////////////
 
 # # ---------------------------------------------------------------------------------------------------------------------#
@@ -206,6 +223,6 @@ EOF
 resource "digitalocean_project_resources" "this" {
   project   = digitalocean_project.this.id
   resources = [
-    concat(values(digitalocean_droplet.services)[*].urn,[digitalocean_volume.this.urn],[digitalocean_loadbalancer.this.urn])
+    concat(values(digitalocean_droplet.services)[*].urn,values(digitalocean_database_cluster.this)[*].urn,[digitalocean_volume.this.urn],[digitalocean_loadbalancer.this.urn])
   ]
 }
