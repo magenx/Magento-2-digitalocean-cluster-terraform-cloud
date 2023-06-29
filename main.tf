@@ -218,7 +218,7 @@ resource "digitalocean_database_cluster" "this" {
   private_network_uuid = digitalocean_vpc.this.id
   project_id = digitalocean_project.this.id
   eviction_policy      = each.key == "redis" ? "allkeys_lru" : null
-  tags                 = [${digitalocean_project.this.name}-${each.key}]
+  tags                 = ["${digitalocean_project.this.name}-${each.key}"]
 }
 ////////////////////////////////////////////////[ DIGITALOCEAN PROJECT RESOURCES ]////////////////////////////////////////
 
@@ -324,8 +324,8 @@ resource "digitalocean_uptime_check" "this" {
 }
 
 # Create a latency alert for the uptime check
-resource "digitalocean_uptime_alert" "alert-example" {
-  for_each   = values(digitalocean_uptime_check.this[*]name)
+resource "digitalocean_uptime_alert" "this" {
+  for_each   = values(digitalocean_uptime_check.this)[*].name
   name       = "${each.key}-alert"
   check_id   = digitalocean_uptime_check.this[each.key].id
   type       = each.key
