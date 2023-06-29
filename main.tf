@@ -113,7 +113,6 @@ resource "digitalocean_droplet" "this" {
   resize_disk   = false
   droplet_agent = true
   tags          = concat(each.key, values(digitalocean_tag.this))
-  ]
 }
 # # ---------------------------------------------------------------------------------------------------------------------#
 # Create DigitalOcean tags for droplets
