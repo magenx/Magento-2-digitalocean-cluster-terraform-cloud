@@ -226,3 +226,84 @@ resource "digitalocean_project_resources" "this" {
     concat(values(digitalocean_droplet.services)[*].urn,values(digitalocean_database_cluster.this)[*].urn,[digitalocean_volume.this.urn],[digitalocean_loadbalancer.this.urn])
   ]
 }
+//////////////////////////////////////////////////[ DROPLET MONITORING ALERT ]////////////////////////////////////////////
+
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create monitoring alert for cpu
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_monitor_alert" "cpu" {
+  alerts {
+    email = [var.admin_email]
+  }
+  window      = "5m"
+  type        = "v1/insights/droplet/cpu"
+  compare     = "GreaterThan"
+  value       = 90
+  enabled     = true
+  entities    = [values(digitalocean_droplet.this)[*].id]
+  description = "Alert about CPU usage for services @ ${digitalocean_project.this.name}"
+}
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create monitoring alert for memory
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_monitor_alert" "memory" {
+  alerts {
+    email = [var.admin_email]
+  }
+  window      = "5m"
+  type        = "v1/insights/droplet/memory_utilization_percent"
+  compare     = "GreaterThan"
+  value       = 90
+  enabled     = true
+  entities    = [values(digitalocean_droplet.this)[*].id]
+  description = "Alert about RAM usage for services @ ${digitalocean_project.this.name}"
+}
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create monitoring alert for disk
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_monitor_alert" "disk" {
+  alerts {
+    email = [var.admin_email]
+  }
+  window      = "5m"
+  type        = "v1/insights/droplet/disk_utilization_percent"
+  compare     = "GreaterThan"
+  value       = 90
+  enabled     = true
+  entities    = [values(digitalocean_droplet.this)[*].id]
+  description = "Alert about DISK usage for services @ ${digitalocean_project.this.name}"
+}
+//////////////////////////////////////////////[ LOAD BALANCER MONITORING ALERT ]//////////////////////////////////////////
+
+
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create monitoring alert for cpu
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_monitor_alert" "lbaas_cpu" {
+  alerts {
+    email = [var.admin_email]
+  }
+  window      = "5m"
+  type        = "v1/insights/lbaas/avg_cpu_utilization_percent"
+  compare     = "GreaterThan"
+  value       = 90
+  enabled     = true
+  entities    = [digitalocean_loadbalancer.this.id]
+  description = "Alert about CPU usage for loadbalancer @ ${digitalocean_project.this.name}"
+}
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create monitoring alert for connections
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_monitor_alert" "lbaas_connections" {
+  alerts {
+    email = [var.admin_email]
+  }
+  window      = "5m"
+  type        = "v1/insights/lbaas/connection_utilization_percent"
+  compare     = "GreaterThan"
+  value       = 90
+  enabled     = true
+  entities    = [digitalocean_loadbalancer.this.id]
+  description = "Alert about connections usage for loadbalancer @ ${digitalocean_project.this.name}"
+}
+
