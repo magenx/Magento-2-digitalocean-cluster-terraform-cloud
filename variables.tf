@@ -36,7 +36,7 @@ variable "protection" {
 }
 
 locals {
-  labels = {
+  tags = {
     "project" = var.project
     "app"     = var.app
     "env"     = var.env
