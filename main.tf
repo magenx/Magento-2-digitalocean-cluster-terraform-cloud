@@ -112,10 +112,15 @@ resource "digitalocean_droplet" "this" {
   volume_ids    = each.key == "media" ? [digitalocean_volume.this.id] : null
   resize_disk   = false
   droplet_agent = true
-  tags          = [
-    each.key,
-    digitalocean_tag.this.id
+  tags          = concat(each.key, values(digitalocean_tag.this))
   ]
+}
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create DigitalOcean tags for droplets
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_tag" "this" {
+  for_each = local.tags
+  name = each.value
 }
 /////////////////////////////////////////////////[ DIGITALOCEAN MEDIA VOLUME ]////////////////////////////////////////////
 
