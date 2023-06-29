@@ -178,20 +178,24 @@ runcmd:
       ADMIN_LAST_NAME="${var.admin_last_name}" \
       ADMIN_LOGIN="${var.admin_login}" \
       ADMIN_EMAIL="${var.admin_email}" \
-%{ if each.key != "frontend" ~}
-      INSTALL_$${SERVER_NAME^^}="y" \
-      $${SERVER_NAME^^}_SERVER_IP="$${PRIVATE_IP}" \
-      bash -s -- lemp ${each.key} firewall
-%{ else ~}
+%{ if each.key == "frontend" ~}
       INSTALL_NGINX="y" \
       INSTALL_PHP="y" \
-      MARIADB_SERVER_IP="${digitalocean_droplet.this["mariadb"].ipv4_address_private}" \
-      REDIS_SERVER_IP="${digitalocean_droplet.this["redis"].ipv4_address_private}" \
+      DATABASE_HOST="${digitalocean_database_cluster.this["mysql"].private_host}"
+      DATABASE_PASSWORD="${digitalocean_database_cluster.this["mysql"].password}" \
+      DATABSE_USER="${digitalocean_database_cluster.this["mysql"].user}"
+      DATABASE_NAME="${digitalocean_database_cluster.this["mysql"].database}"
+      MARIADB_SERVER_IP="${digitalocean_database_cluster.this["mysql"].private_host}" \
+      REDIS_SERVER_IP="${digitalocean_database_cluster.this["redis"].private_host}" \
       RABBITMQ_SERVER_IP="${digitalocean_droplet.this["rabbitmq"].ipv4_address_private}" \
       VARNISH_SERVER_IP="${digitalocean_droplet.this["varnish"].ipv4_address_private}" \
       ELASTICSEARCH_SERVER_IP="${digitalocean_droplet.this["elasticsearch"].ipv4_address_private}" \
       MEDIA_SERVER_IP="${digitalocean_droplet.this["media"].ipv4_address_private}" \
-      bash -s -- lemp magento install config firewall
+      bash -s -- lemp magento install config
+%{ else ~}
+      INSTALL_$${SERVER_NAME^^}="y" \
+      $${SERVER_NAME^^}_SERVER_IP="$${PRIVATE_IP}" \
+      bash -s -- lemp ${each.key}
 %{ endif ~}
 EOF
 
@@ -212,6 +216,7 @@ resource "digitalocean_database_cluster" "this" {
   region     = var.region
   node_count = each.value.node_count
   private_network_uuid = digitalocean_vpc.this.id
+  project_id = digitalocean_project.this.id
   eviction_policy      = each.key == "redis" ? "allkeys_lru" : null
   tags                 = [${digitalocean_project.this.name}-${each.key}]
 }
@@ -223,7 +228,7 @@ resource "digitalocean_database_cluster" "this" {
 resource "digitalocean_project_resources" "this" {
   project   = digitalocean_project.this.id
   resources = [
-    concat(values(digitalocean_droplet.services)[*].urn,values(digitalocean_database_cluster.this)[*].urn,[digitalocean_volume.this.urn],[digitalocean_loadbalancer.this.urn])
+    concat(values(digitalocean_droplet.services)[*].urn,[digitalocean_volume.this.urn],[digitalocean_loadbalancer.this.urn])
   ]
 }
 //////////////////////////////////////////////////[ DROPLET MONITORING ALERT ]////////////////////////////////////////////
@@ -275,7 +280,6 @@ resource "digitalocean_monitor_alert" "disk" {
 }
 //////////////////////////////////////////////[ LOAD BALANCER MONITORING ALERT ]//////////////////////////////////////////
 
-
 # # ---------------------------------------------------------------------------------------------------------------------#
 # Create monitoring alert for cpu
 # # ---------------------------------------------------------------------------------------------------------------------#
@@ -306,4 +310,29 @@ resource "digitalocean_monitor_alert" "lbaas_connections" {
   entities    = [digitalocean_loadbalancer.this.id]
   description = "Alert about connections usage for loadbalancer @ ${digitalocean_project.this.name}"
 }
+//////////////////////////////////////////////////[ UPTIME CHECK WITH ALERT ]/////////////////////////////////////////////
 
+# # ---------------------------------------------------------------------------------------------------------------------#
+# Create uptime for the target endpoint in a specific region
+# # ---------------------------------------------------------------------------------------------------------------------#
+resource "digitalocean_uptime_check" "this" {
+  for_each = ["down","ssl_expiry","latency"]
+  name     = "${digitalocean_project.this.name}-uptime-check"
+  target   = var.domain
+  type     = "https"
+  regions  = ["eu_west"]
+}
+
+# Create a latency alert for the uptime check
+resource "digitalocean_uptime_alert" "alert-example" {
+  for_each   = values(digitalocean_uptime_check.this[*]name)
+  name       = "${each.key}-alert"
+  check_id   = digitalocean_uptime_check.this[each.key].id
+  type       = each.key
+  threshold  = each.key == "latency" ? "300" : null
+  comparison = each.key == "latency" ? "greater_than" : null
+  period     = "5m"
+  notifications {
+    email = [var.admin_email]
+  }
+}
