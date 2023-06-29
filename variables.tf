@@ -53,8 +53,19 @@ locals {
   }
 }
 
+# Create managed databases
+## {  mysql = { version = "8" node_count = "1" size = "db-s-2vcpu-4gb" } redis = { version = "6" node_count = "1" size = "db-s-1vcpu-2gb" } }
+variable "database" {
+  type = map(object({
+    version    = string
+    node_count = string
+    size       = string
+  }))
+  default = {}
+}
+
 ## HCL type variable in Terraform Cloud
-## { mariadb = "cax11", elasticsearch = "cax11", redis = "cax11", rabbitmq = "cax11", media = "cax11", varnish = "cax11", frontend = "cax11" }
+## { elasticsearch = "s-1vcpu-2gb-intel", rabbitmq = "s-1vcpu-1gb-intel", media = "s-1vcpu-1gb-intel", varnish = "s-1vcpu-2gb-intel", frontend = "s-4vcpu-8gb-intel" }
 variable "servers" {
   description = "A map of server types"
   type        = map(string)
