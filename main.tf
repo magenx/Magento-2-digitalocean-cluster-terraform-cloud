@@ -102,7 +102,7 @@ resource "digitalocean_reserved_ip_assignment" "this" {
 # # ---------------------------------------------------------------------------------------------------------------------#
 resource "digitalocean_droplet" "this" {
   for_each      = var.droplets
-  image         = "debian-11"
+  image         = "debian-11-x64"
   name          = "${digitalocean_project.this.name}-${each.key}"
   region        = var.region
   size          = var.size
