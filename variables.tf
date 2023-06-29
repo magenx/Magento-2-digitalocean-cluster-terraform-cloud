@@ -9,10 +9,10 @@ variable "bearer" {
   type        = string
 }
 
-variable "network_zone" {
-  description = "Name of network zone"
+variable "region" {
+  description = "Name of region"
   type        = string
-  default     = "eu-central"
+  default     = ""
 }
 
 variable "project" {
@@ -32,16 +32,6 @@ variable "app" {
 
 variable "protection" {
   description = "Enable or disable delete protection"
-  type        = bool
-}
-
-variable "ipv4_enabled" {
-  description = "Enable or disable ipv4"
-  type        = bool
-}
-
-variable "ipv6_enabled" {
-  description = "Enable or disable ipv6"
   type        = bool
 }
 
