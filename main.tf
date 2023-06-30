@@ -30,7 +30,7 @@ resource "digitalocean_project" "this" {
 resource "digitalocean_vpc" "this" {
   name     = digitalocean_projetc.this.name
   region   = var.region
-  ip_range = var.vpc_cidr
+  ip_range = "10.0.0.0/16"
 }
 /////////////////////////////////////////////////[ DIGITALOCEAN SSH KEY ]/////////////////////////////////////////////////
 
